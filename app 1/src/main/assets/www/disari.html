@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Nova dışarıda</title>
+<style>
+  html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:transparent; }
+  canvas#tuval { position:fixed; inset:0; width:100%; height:100%; display:block; background:transparent; touch-action:none; }
+  /* yalnızca tarayıcı testinde: sahte ana ekran */
+  #sahteEkran { position:fixed; inset:0; display:none; font-family:system-ui, Roboto, sans-serif; overflow:hidden; }
+  body.test #sahteEkran { display:block; }
+  .sahte-simge { position:absolute; text-align:center; color:#fff; font-size:11px; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  .sahte-simge i { display:block; margin:0 auto 5px; border-radius:24%; box-shadow:0 2px 6px rgba(0,0,0,.18); }
+  .sahte-blok { position:absolute; border-radius:999px; background:rgba(255,255,255,.92); }
+  .cerceve { position:fixed; border:1px dashed rgba(255,80,160,.9); pointer-events:none; z-index:5; }
+  #testBalon { position:fixed; z-index:6; display:none; background:#fff; color:#2a2340; font:14px system-ui, sans-serif; padding:8px 12px; border-radius:16px; box-shadow:0 4px 14px rgba(0,0,0,.18); max-width:220px; transform:translate(-50%, -100%); }
+</style>
+</head>
+<body>
+<div id="sahteEkran"></div>
+<canvas id="tuval"></canvas>
+<div id="testBalon"></div>
+<script type="importmap">
+{"imports":{
+  "three":"./lib/three.module.js",
+  "three/addons/":"./lib/addons/",
+  "@pixiv/three-vrm":"./lib/three-vrm.module.js"
+}}
+</script>
+<script type="module" src="js/kutuphane.js"></script>
+<script defer src="veri/hareketler.js"></script>
+<script defer src="js/cekirdek.js"></script>
+<script defer src="js/platform.js"></script>
+<script defer src="js/motor/iskelet.js"></script>
+<script defer src="js/motor/poz.js"></script>
+<script defer src="veri/klipler.js"></script>
+<script defer src="js/motor/klip.js"></script>
+<script defer src="js/karakter/adaptor.js"></script>
+<script defer src="js/disari/on.js"></script>
+<script defer src="js/karakter/kiyafet-ortak.js"></script>
+<script defer src="js/karakter/gercekci.js"></script>
+<script defer src="js/oda/kiyafet-atolye.js"></script>
+<script defer src="js/karakter/beden.js"></script>
+<script defer src="js/beyin/kisilik.js"></script>
+<script defer src="js/beyin/hafiza.js"></script>
+<script defer src="js/beyin/telefon.js"></script>
+<script defer src="js/disari/disari.js"></script>
+</body>
+</html>

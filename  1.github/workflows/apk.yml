@@ -1,0 +1,51 @@
+name: Nova APK
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      # "Nova ses ver" için telefonda çalışan Türkçe ses modeli (Vosk, Apache 2.0, ~35 MB)
+      - name: Türkçe ses modelini indir
+        run: |
+          curl -fsSL --retry 3 -o model.zip https://alphacephei.com/vosk/models/vosk-model-small-tr-0.3.zip
+          unzip -q model.zip -d model_gecici
+          mkdir -p app/src/main/assets/model-tr
+          cp -r model_gecici/vosk-model-small-tr-0.3/* app/src/main/assets/model-tr/
+          echo "vosk-small-tr-0.3" > app/src/main/assets/model-tr/uuid
+          du -sh app/src/main/assets/model-tr
+
+      - name: APK oluştur
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: APK'yı indirilebilir yap (Actions sayfası)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nova-apk
+          path: app/build/outputs/apk/release/app-release.apk
+
+      # Telefondan kolay indirme: depo sayfasında "Releases → Nova (son derleme) → Nova.apk"
+      - name: Son sürümü yayınla
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk Nova.apk
+          gh release delete son -y --cleanup-tag || true
+          gh release create son Nova.apk --title "Nova (son derleme)" --notes "Otomatik derleme · ${GITHUB_SHA::7}"
