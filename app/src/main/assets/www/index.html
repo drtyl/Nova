@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="color-scheme" content="light dark">
+<title>Nova</title>
+<link rel="stylesheet" href="css/nova.css">
+<link rel="stylesheet" href="css/ekranlar.css">
+</head>
+<body>
+<div class="app" id="app" data-tema="studyo">
+  <section class="sahne" aria-label="Nova sahnesi">
+    <canvas id="tuval"></canvas>
+    <div class="durumSatir" id="durumlar"></div>
+    <div class="ust">
+      <div class="marka cam"><span class="logo">N</span><span><b>NOVA</b><small id="beyinKisa">beyin bağlanıyor…</small></span></div>
+      <div class="gorunum cam" role="group" aria-label="Görünüm">
+        <button type="button" data-g="model" aria-pressed="true">Model</button>
+        <button type="button" data-g="iskelet" aria-pressed="false">İskelet</button>
+        <button type="button" data-g="xray" aria-pressed="false">Sadece iskelet</button>
+      </div>
+    </div>
+    <div class="sira" id="sira"></div>
+    <div class="alt">
+      <div class="kameralar cam" role="group" aria-label="Kamera">
+        <button type="button" data-k="tum" aria-pressed="true">Genel</button>
+        <button type="button" data-k="yakin" aria-pressed="false">Yakın</button>
+        <button type="button" data-k="yan" aria-pressed="false">Yan</button>
+        <button type="button" data-k="tepe" aria-pressed="false">Tepe</button>
+      </div>
+      <form class="hizli cam" id="hizliForm">
+        <span class="nokta" id="beyinNokta"></span>
+        <input type="text" id="hizliMesaj" placeholder="Nova'ya bir şey söyle…" autocomplete="off" aria-label="Nova'ya mesaj">
+        <button class="yuvarlak mik" type="button" id="mikBtn" aria-label="Mikrofonla konuş"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+        <button class="yuvarlak" type="submit" aria-label="Gönder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </form>
+      <button class="cekmeceBtn cam" type="button" id="cekmeceBtn" aria-expanded="false" aria-controls="panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>Kontroller</span></button>
+    </div>
+    <div class="balon" id="balon" hidden></div>
+    <div class="etiket3d" id="etiket3d" hidden></div>
+    <button class="geriGetir cam" type="button" id="geriGetir" hidden aria-label="Arayüzü göster"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/></svg></button>
+    <div class="yukleme" id="yukleme"><div>Nova hazırlanıyor <span id="yuzde">0%</span><div class="bar"><i id="bar"></i></div></div></div>
+  </section>
+
+  <aside class="panel" id="panel" aria-label="Kontroller" inert>
+    <div class="tutamak" aria-hidden="true"></div>
+    <div class="panelBas"><b>Kontroller</b><button class="kapat" type="button" id="kapat" aria-label="Kapat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="sekmeler" role="tablist">
+      <button role="tab" aria-selected="true" data-s="sohbet">Sohbet</button>
+      <button role="tab" aria-selected="false" data-s="nova">Nova</button>
+      <button role="tab" aria-selected="false" data-s="gardirop">Gardırop</button>
+      <button role="tab" aria-selected="false" data-s="oda">Oda</button>
+      <button role="tab" aria-selected="false" data-s="komutlar">Komutlar</button>
+      <button role="tab" aria-selected="false" data-s="hareket">Hareket</button>
+      <button role="tab" aria-selected="false" data-s="atolye">Atölye</button>
+      <button role="tab" aria-selected="false" data-s="ayar">Ayarlar</button>
+    </div>
+    <!-- SOHBET -->
+    <div class="sohbet-kap" id="s-sohbet">
+      <div class="sohbet" id="sohbet" aria-live="polite"></div>
+      <div class="giris">
+        <div class="cipler" id="ornekler"></div>
+        <form class="satir" id="sohbetForm">
+          <input type="text" id="mesaj" placeholder="Nova'ya bir şey söyle…" autocomplete="off">
+          <button class="yuvarlak mik" type="button" id="mikBtn2" aria-label="Mikrofonla konuş"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+          <button class="btn" type="submit" id="gonder">Gönder</button>
+          <button class="btn ikincil" type="button" id="durdur" hidden>Durdur</button>
+        </form>
+        <div class="beyin" id="beyin"><i></i><span>beyin bağlanıyor…</span></div>
+      </div>
+    </div>
+
+    <!-- HAREKET -->
+    <div class="icerik" id="s-hareket" hidden>
+      <div class="bolum" id="etkinlikBolum">
+        <span class="etiket">Odada yap</span>
+        <div class="cipler" id="etkinlikler"></div>
+      </div>
+      <div class="bolum">
+        <div class="baslik"><span class="etiket">Hareket kütüphanesi</span>
+          <div class="seg" id="tarafSec" role="group" aria-label="Taraf"><button type="button" data-t="sag" aria-pressed="true">Sağ</button><button type="button" data-t="sol" aria-pressed="false">Sol</button></div></div>
+        <div class="izgara" id="hareketIzgara"></div>
+        <div class="kaydirici"><span>⏱</span><input type="range" id="hiz" min="50" max="200" value="100" aria-label="Hız"><span id="hizD">1.0×</span></div>
+      </div>
+      <div class="bolum" id="ogrenBolum" hidden>
+        <span class="etiket">Nova'nın öğrendikleri</span>
+        <p class="not">Sohbette ya da boş zamanında kendi uydurduğu hareketler. Sonra adıyla tekrar kullanıyor.</p>
+        <div class="izgara" id="ogrenIzgara"></div>
+      </div>
+      <div class="bolum" id="ozelBolum" hidden>
+        <span class="etiket">Benim hareketlerim</span>
+        <div class="izgara" id="ozelIzgara"></div>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Ruh hali · duruşu ve temposu değiştirir</span>
+        <div class="cipler" id="ruhlar"></div>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Yüz ifadesi</span>
+        <div class="cipler" id="ifadeler"></div>
+        <div class="kaydirici"><span>%</span><input type="range" id="yogunluk" min="0" max="100" value="80" aria-label="İfade yoğunluğu"><span id="yogunlukD">80</span></div>
+      </div>
+      <div class="bolum">
+        <div class="baslik"><span class="etiket">El şekli</span>
+          <div class="seg" id="elTaraf" role="group" aria-label="El"><button type="button" data-t="sag" aria-pressed="true">Sağ</button><button type="button" data-t="sol" aria-pressed="false">Sol</button><button type="button" data-t="iki" aria-pressed="false">İkisi</button></div></div>
+        <div class="cipler" id="eller"></div>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Bakış</span>
+        <div class="cipler" id="bakislar"></div>
+      </div>
+    </div>
+
+    <!-- NOVA: KİŞİLİK + HAFIZA -->
+    <div class="icerik" id="s-nova" hidden>
+      <div class="bolum" id="disariBolum">
+        <span class="etiket">Dışarı çık</span>
+        <p class="not">Nova evinden (bu uygulamadan) çıkıp ana ekranında yaşar: simgelerin üstüne oturur, arkalarına saklanır, aralarında gezer. <b>Çift dokun:</b> konuş · <b>basılı tut / sürükle:</b> taşı · <b>dokun:</b> tepki verir. Uygulamayı açınca eve döner; bildirimden de çağırabilirsin.</p>
+        <div class="izinler" id="dIzinler"></div>
+        <label class="anahtar"><span>Boyu<small>Küçük olması pili de daha az harcar</small></span><select id="dBoy"><option value="kucuk">Küçük</option><option value="orta" selected>Orta</option><option value="buyuk">Büyük</option></select></label>
+        <div class="kaydirici"><span>Simge</span><input type="range" id="dSimge" min="48" max="80" value="62" aria-label="Simge boyu ayarı"><span id="dSimgeD">62</span></div>
+        <p class="not">Simge ayarı: Nova simgelerin üstüne tam oturmuyorsa (havada ya da içine gömülü) bunu biraz oynat.</p>
+        <label class="anahtar"><span>Sesli konuşsun<small>Balonla birlikte sesli de söyler</small></span><input type="checkbox" id="dSesli" checked></label>
+        <label class="anahtar"><span>Kendiliğinden konuşsun<small>Ara sıra pil, saat ya da canı sıkılınca bir şey söyler</small></span><input type="checkbox" id="dKonuskan" checked></label>
+        <label class="anahtar"><span>Her uygulamada görünsün<small>Kapalıyken yalnızca ana ekranda görünür</small></span><input type="checkbox" id="dHeryerde"></label>
+        <div class="satir"><button class="btn" type="button" id="dCik">Nova'yı dışarı çıkar</button><span class="not" id="dDurum"></span></div>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Kişilik</span>
+        <p class="not">Nova her mesajda bunlara göre konuşur ve davranır. Değişiklikler hemen geçerli olur.</p>
+        <div class="ikili"><label>Adı<input type="text" id="kAd" maxlength="20"></label><label>Senin adın<input type="text" id="kKullanici" maxlength="30" placeholder="ör. Tayyar"></label></div>
+        <div id="kOzellikler" class="ozellikler"></div>
+        <label class="blok">Konuşma tarzı<textarea id="kTarz" rows="2"></textarea></label>
+        <label class="blok">Sevdiği şeyler<input type="text" id="kIlgi"></label>
+        <label class="blok">Sevmediği şeyler<input type="text" id="kSevmez" placeholder="ör. yalan, dağınıklık"></label>
+        <label class="blok">Kendisi hakkında (serbest)<textarea id="kOzel" rows="3" placeholder="ör. Resim yapmayı sana borçlu olduğunu düşünür; sabahları biraz huysuzdur."></textarea></label>
+      </div>
+      <div class="bolum">
+        <div class="baslik"><span class="etiket">Beden</span><button class="btn ikincil kucuk" type="button" id="bSifirla">Varsayılan</button></div>
+        <p class="not">Yeni beden değil, Nova'nın kendi bedeninin oranları. Evde ve dışarıda aynıdır.</p>
+        <div id="bAyarlar"></div>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Ses</span>
+        <div class="kaydirici"><span>Perde</span><input type="range" id="kPerde" min="60" max="180" value="115"><span id="kPerdeD">1.15</span></div>
+        <div class="kaydirici"><span>Hız</span><input type="range" id="kHiz" min="60" max="160" value="100"><span id="kHizD">1.00</span></div>
+        <div class="satir"><button class="btn ikincil kucuk" type="button" id="kSesDene">Sesi dene</button><span class="not">Ses seçimi: Ayarlar → Ses</span></div>
+      </div>
+      <div class="bolum">
+        <div class="baslik"><span class="etiket">Hafıza</span><span class="not" id="hSayi"></span></div>
+        <p class="not">Nova'nın senin hakkında hatırladıkları. Yalnızca söylediğin şeyler kaydedilir; yanlış olanı silebilirsin.</p>
+        <label class="anahtar"><span>Sohbetten kendisi hatırlasın<small>Birkaç mesajda bir yeni bilgileri kaydeder</small></span><input type="checkbox" id="hafizaOto" checked></label>
+        <div class="satir"><input type="text" id="hYeni" placeholder="Hatırlamasını istediğin bir şey…" maxlength="220"><select id="hTur"></select><button class="btn kucuk" type="button" id="hEkle">Ekle</button></div>
+        <div class="satir sar"><button class="btn ikincil kucuk" type="button" id="hSimdi">Şimdi sohbetten hatırla</button><button class="btn ikincil kucuk" type="button" id="hTemizle">Hepsini sil</button><span class="not" id="hNot"></span></div>
+        <div class="liste" id="hListe"></div>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Sohbet geçmişi</span>
+        <p class="not">Son 24 mesaj uygulama kapansa da saklanır; Nova konuşmaya kaldığı yerden devam eder.</p>
+        <button class="btn ikincil kucuk" type="button" id="gecmisSil">Sohbet geçmişini temizle</button>
+      </div>
+    </div>
+
+    <!-- GARDIROP + KIYAFET ATÖLYESİ -->
+    <div class="icerik" id="s-gardirop" hidden>
+      <div class="bolum">
+        <span class="etiket">Gardırop · Nova dolaba gidip kapağın önünde değişir</span>
+        <div class="cipler" id="kiyafetler"></div>
+        <p class="not">Nova sohbette kendi kıyafetini de tasarlayabilir ("bana mavi çizgili bir elbise tasarla").</p>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Kıyafet atölyesi</span>
+        <label class="blok">Adı<input type="text" id="tAd" maxlength="30" placeholder="ör. Mavi yaz elbisesi"></label>
+        <label class="anahtar"><span>Temel kıyafet<small>Kesim bundan gelir</small></span><select id="tTemel"></select></label>
+        <div class="renkSatir"><label><input type="checkbox" id="tUstVar"> Üst rengi</label><input type="color" id="tUst" value="#7aa6e0"></div>
+        <div class="renkSatir"><label><input type="checkbox" id="tAltVar" checked> Alt rengi (etek / pantolon)</label><input type="color" id="tAlt" value="#7aa6e0"></div>
+        <label class="anahtar"><span>Desen<small>Etek ve pantolon kumaşına uygulanır</small></span><select id="tDesen"></select></label>
+        <div class="satir sar"><button class="btn ikincil" type="button" id="tOnizle">Üstünde dene</button><button class="btn" type="button" id="tKaydet">Gardıroba ekle</button><button class="btn" type="button" id="tGiy">Ekle ve giysin</button></div>
+        <p class="not" id="tNot"></p>
+      </div>
+      <div class="bolum" id="tOzelBolum" hidden>
+        <span class="etiket">Tasarımların</span>
+        <div class="liste" id="tListe"></div>
+      </div>
+    </div>
+
+    <!-- ODA TASARIMI -->
+    <div class="icerik" id="s-oda" hidden>
+      <div class="bolum">
+        <div class="baslik"><span class="etiket">Eşyaları yerleştir</span><button class="btn kucuk" type="button" id="dMod">Düzenlemeye başla</button></div>
+        <p class="not">Bir eşya seç, okla taşı, döndür. Nova yolunu ve etkinlik yerlerini yeni düzene göre bulur. Değişiklikler kendiliğinden kaydedilir.</p>
+        <div class="cipler" id="dEsyalar"></div>
+        <div class="ped" id="dPed">
+          <button type="button" data-d="sol-don" aria-label="Sola döndür">⟲</button><button type="button" data-d="ileri" aria-label="Geri taşı">▲</button><button type="button" data-d="sag-don" aria-label="Sağa döndür">⟳</button>
+          <button type="button" data-d="sol" aria-label="Sola taşı">◀</button><button type="button" data-d="sifirla" aria-label="Yerine koy" class="kucukYazi">yerine</button><button type="button" data-d="sag" aria-label="Sağa taşı">▶</button>
+          <span></span><button type="button" data-d="geri" aria-label="Öne taşı">▼</button><span></span>
+        </div>
+        <p class="not" id="dNot">Eşya seçilmedi.</p>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Kaplamalar</span>
+        <label class="anahtar"><span>Zemin</span><select id="dZemin"></select></label>
+        <label class="anahtar"><span>Duvarlar</span><select id="dDuvar"></select></label>
+        <button class="btn ikincil kucuk" type="button" id="dHepsi">Odayı ilk haline döndür</button>
+      </div>
+    </div>
+
+    <!-- EK KOMUTLAR -->
+    <div class="icerik" id="s-komutlar" hidden>
+      <div class="bolum">
+        <div class="baslik"><span class="etiket">Komutların</span><button class="btn kucuk" type="button" id="cYeni">+ Yeni komut</button></div>
+        <p class="not">Bir söz söylediğinde (yazarak ya da mikrofonla) Nova'nın ne yapacağını sen belirlersin. Tetikleyici geçen mesajlar yapay zekâya gitmeden doğrudan çalışır; Nova da uygun gördüğünde bunları kendisi kullanır.</p>
+        <div class="liste" id="cListe"></div>
+      </div>
+      <div class="bolum" id="cEditor" hidden>
+        <span class="etiket" id="cBaslik">Yeni komut</span>
+        <label class="blok">Adı<input type="text" id="cAd" maxlength="30" placeholder="ör. Sabah rutini"></label>
+        <label class="blok">Tetikleyici sözler (virgülle)<input type="text" id="cTetik" placeholder="ör. günaydın, uyan bakalım"></label>
+        <label class="blok">Açıklama (Nova'nın ne zaman kullanacağını anlaması için)<input type="text" id="cAciklama"></label>
+        <span class="not">Adım ekle:</span>
+        <div class="cipler" id="cSablon"></div>
+        <textarea id="cJson" spellcheck="false" rows="8"></textarea>
+        <div class="satir sar"><button class="btn" type="button" id="cKaydet">Kaydet</button><button class="btn ikincil" type="button" id="cDene">Dene</button><button class="btn ikincil" type="button" id="cIptal">Vazgeç</button></div>
+        <p class="not" id="cNot"></p>
+        <details class="not"><summary>Kullanabileceğin alanlar</summary><pre class="json" id="cSozlesme"></pre></details>
+      </div>
+    </div>
+
+
+    <!-- ATÖLYE -->
+    <div class="icerik" id="s-atolye" hidden>
+      <div class="bolum">
+        <span class="etiket">Yapay zekâya tarif et</span>
+        <textarea id="tarif" style="min-height:70px;font-family:var(--f-body);font-size:13.5px" placeholder="ör. iki kolunu yavaşça açıp kendi etrafında dönüyormuş gibi sallansın"></textarea>
+        <div class="satir"><button class="btn" type="button" id="tarifEt">Hareketi tasarla</button><span class="not" id="tarifDurum"></span></div>
+      </div>
+      <div class="bolum">
+        <div class="baslik"><span class="etiket">Eklem</span><span class="not" id="sinirNot"></span></div>
+        <select id="kemikSec" aria-label="Eklem seç"></select>
+        <div id="kaydiricilar" class="bolum"></div>
+        <div class="satir sar">
+          <button class="btn ikincil kucuk" type="button" id="simetri">Sağı sola aynala</button>
+          <button class="btn ikincil kucuk" type="button" id="eklemSifir">Bu eklemi sıfırla</button>
+          <button class="btn ikincil kucuk" type="button" id="serbest">Hepsini bırak</button>
+        </div>
+        <p class="not">İpucu: üstteki <b>İskelet</b> görünümünde bir eklem noktasına dokunarak da seçebilirsin.</p>
+      </div>
+      <div class="bolum">
+        <div class="baslik"><span class="etiket">Anahtar kareler</span><button class="btn kucuk" type="button" id="kareEkle">+ Kare ekle</button></div>
+        <div class="kareler" id="kareler"></div>
+        <div class="satir sar">
+          <label class="not" for="atSure">Süre</label><input type="number" id="atSure" min="0.4" max="12" step="0.1" value="2.4">
+          <label class="not" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="atDongu"> Döngü</label>
+          <label class="not" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="atDinlen" checked> Dinlenmeden başla/bitir</label>
+        </div>
+        <div class="satir"><input type="text" id="atAd" placeholder="Hareketin adı (ör. Mutlu dans)"><button class="btn ikincil" type="button" id="atOynat">Oynat</button><button class="btn" type="button" id="atKaydet">Kaydet</button></div>
+        <p class="not" id="atDurum"></p>
+      </div>
+      <div class="bolum">
+        <div class="baslik"><span class="etiket">JSON çıktısı</span><button class="btn ikincil kucuk" type="button" id="atKopya">Kopyala</button></div>
+        <pre class="json" id="atJson">—</pre>
+      </div>
+    </div>
+
+    <!-- AYARLAR -->
+    <div class="icerik" id="s-ayar" hidden>
+      <div class="bolum">
+        <span class="etiket">Yapay zekâ (Groq)</span>
+        <p class="not">Nova'nın beyni. Ücretsiz anahtarı <b>console.groq.com</b> → API Keys bölümünden alıp buraya yapıştır. Anahtar yalnızca bu telefonda saklanır.</p>
+        <input type="password" id="aiAnahtar" placeholder="gsk_…" autocomplete="off" spellcheck="false">
+        <label class="anahtar"><span>Model</span><select id="aiModel"></select></label>
+        <div class="satir"><button class="btn" type="button" id="aiKaydet">Kaydet ve bağlan</button><button class="btn ikincil" type="button" id="aiDene">Dene</button></div>
+        <p class="not" id="aiDurumNot"></p>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Canlılık</span>
+        <div>
+          <label class="anahtar"><span>Göz teması<small>Nova kime bakıyor</small></span>
+            <select id="bakisModu"><option value="kamera">Sana (kameraya)</option><option value="imlec">Parmağını / imleci izle</option><option value="serbest">Serbest (ileri)</option></select></label>
+          <label class="anahtar"><span>Nefes ve ağırlık aktarma<small>Dururken bile canlı görünür</small></span><input type="checkbox" id="nefes" checked></label>
+          <label class="anahtar"><span>Serbest davranış<small>Boş kalınca kendi kendine dolaşır, etrafına bakar, gerinir</small></span><input type="checkbox" id="serbestDav" checked></label>
+          <label class="anahtar"><span>Boş zamanında kararı yapay zekâ versin<small>Ne yapacağını yapay zekâ seçer, yeni hareketler uydurabilir. Dakikada bir istek yapar</small></span><input type="checkbox" id="serbestAI"></label>
+          <div class="anahtar"><span>Uyku saatleri<small>Bu saatlerde kendi kendine yatağına gider</small></span><span class="satir"><input type="time" id="uykuBas" value="23:30" aria-label="Uyku başlangıcı"><input type="time" id="uykuBit" value="07:30" aria-label="Uyanma"></span></div>
+          <label class="anahtar"><span>Odanın ışığı<small>Ekran duvar kağıdı ve lambalar</small></span><select id="gunIsigi"><option value="telefon" selected>Telefonun moduna göre</option><option value="oto">Saate göre</option><option value="gunduz">Gündüz</option><option value="aksam">Akşam</option><option value="gece">Gece</option></select></label>
+          <label class="anahtar"><span>Sesli konuş<small>Her yanıtı telefonun Türkçe sesiyle okur (mikrofonla konuşunca zaten sesli yanıt verir)</small></span><input type="checkbox" id="sesli"></label>
+          <label class="anahtar"><span>Ses<small id="sesNot">Cihaz sesleri</small></span><select id="sesSec"><option value="">Otomatik</option></select></label>
+        </div>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Sahne teması</span>
+        <div class="temalar" id="temalar">
+          <button class="tema" type="button" data-t="oda" aria-pressed="true"><i></i>Oda</button>
+          <button class="tema" type="button" data-t="studyo" aria-pressed="false"><i></i>Stüdyo</button>
+          <button class="tema" type="button" data-t="gece" aria-pressed="false"><i></i>Gece stüdyo</button>
+          <button class="tema" type="button" data-t="seffaf" aria-pressed="false"><i></i>Şeffaf</button>
+        </div>
+        <p class="not">Şeffaf tema, Nova'yı başka bir uygulamanın içine gömerken o uygulamanın kendi arka planını gösterir.</p>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Görsel</span>
+        <div>
+          <label class="anahtar"><span>Yumuşak gölge<small>Işığın zemine düşürdüğü gölge</small></span><input type="checkbox" id="golgeAc" checked></label>
+          <label class="anahtar"><span>Ortam gölgesi<small>Köşelerde ve diplerde gerçekçi kararma (telefonda ağırsa kapat)</small></span><input type="checkbox" id="aoAc" checked></label>
+          <label class="anahtar"><span>Çözünürlük</span><select id="kalite"><option value="1">Normal</option><option value="1.5">Yüksek</option><option value="2" selected>En yüksek</option></select></label>
+          <label class="anahtar"><span>Pil modu<small>Otomatik: dokunurken 60, boşta 30 kare/sn · Tasarruf: hep 30</small></span><select id="pilModu"><option value="oto" selected>Otomatik</option><option value="tasarruf">Tasarruf</option><option value="performans">Performans</option></select></label>
+          <label class="anahtar"><span>Otomatik kalite<small>Telefon zorlanırsa ortam gölgesini, gölgeyi, sonra çözünürlüğü kendisi düşürür</small></span><input type="checkbox" id="otoKalite" checked></label>
+          <div class="anahtar"><span>Temiz görünüm<small>Tüm arayüzü gizler; köşedeki silik düğmeyle geri gelir</small></span><button class="btn ikincil kucuk" type="button" id="sadeBtn">Gizle</button></div>
+        </div>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Nova'nın günlüğü</span>
+        <p class="not">Yalnızca gerçekten yaptıkları. Sohbette bunlardan bahsedebilir, başka bir şey uyduramaz.</p>
+        <div class="gunluk" id="gunlukListe"></div>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Hata günlüğü</span>
+        <p class="not">Bir şey ters giderse (Nova takılırsa, dışarıda görünmezse) buradaki satırları kopyalayıp bana gönder.</p>
+        <pre class="hataGunluk" id="hataGunluk">Henüz kayıt yok.</pre>
+        <div class="satir sar"><button class="btn ikincil kucuk" type="button" id="hataYenile">Yenile</button><button class="btn ikincil kucuk" type="button" id="hataKopyala">Kopyala</button><button class="btn ikincil kucuk" type="button" id="hataTemizle">Temizle</button><button class="btn ikincil kucuk" type="button" id="rehberAc">Başlangıç rehberini aç</button></div>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Yedek</span>
+        <p class="not">Kişilik, hafıza, kıyafetler, oda düzeni, komutlar, öğrendiği hareketler ve sohbet geçmişi. Kopyalayıp bir yere sakla; yeni telefonda buraya yapıştırıp yükle.</p>
+        <textarea id="yedekMetin" spellcheck="false" placeholder="Yedek burada görünür"></textarea>
+        <div class="satir sar"><button class="btn ikincil kucuk" type="button" id="yedekAl">Yedeği göster</button><button class="btn ikincil kucuk" type="button" id="yedekKopya">Kopyala</button><button class="btn ikincil kucuk" type="button" id="yedekYukle">Yapıştırılanı yükle</button></div>
+        <p class="not" id="yedekNot"></p>
+      </div>
+      <div class="bolum">
+        <span class="etiket">JSON konsolu</span>
+        <textarea id="jsonGir" spellcheck="false"></textarea>
+        <div class="satir"><button class="btn ikincil" type="button" id="jsonCalistir">Çalıştır</button><span class="not" id="jsonHata"></span></div>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Komut sözleşmesi</span>
+        <p class="not">Motorun anladığı tek dil bu. Lonca'da Groq ya da başka bir yapay zekâ da aynı alanları üretecek.</p>
+        <pre class="json" id="sozlesme"></pre>
+      </div>
+      <div class="bolum">
+        <span class="etiket">Uygulamalara bağlama</span>
+        <p class="not">Nova bir sayfa olarak başka bir uygulamanın içine (Lonca'daki WebView ya da bir iframe) yerleşir ve dışarıdan mesajla yönetilir. Hareket motoru görünümden ayrı; her uygulama kendi temasını seçebilir.</p>
+        <pre class="json" id="baglanti"></pre>
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<script type="importmap">
+{"imports":{
+  "three":"./lib/three.module.js",
+  "three/addons/":"./lib/addons/",
+  "@pixiv/three-vrm":"./lib/three-vrm.module.js"
+}}
+</script>
+<script type="module" src="js/kutuphane.js"></script>
+<script defer src="veri/hareketler.js"></script>
+<script defer src="js/cekirdek.js"></script>
+<script defer src="js/platform.js"></script>
+<script defer src="js/motor/iskelet.js"></script>
+<script defer src="js/motor/poz.js"></script>
+<script defer src="veri/klipler.js"></script>
+<script defer src="js/motor/klip.js"></script>
+<script defer src="js/motor/oynatici.js"></script>
+<script defer src="js/sahne/sahne.js"></script>
+<script defer src="js/motor/yuruyus.js"></script>
+<script defer src="js/oda/esyalar.js"></script>
+<script defer src="js/oda/donanim.js"></script>
+<script defer src="js/oda/yol.js"></script>
+<script defer src="js/karakter/kiyafet-ortak.js"></script>
+<script defer src="js/oda/gardirop.js"></script>
+<script defer src="js/oda/isik.js"></script>
+<script defer src="js/oda/tablo.js"></script>
+<script defer src="js/oda/kitap-gunluk.js"></script>
+<script defer src="js/oda/aksesuar.js"></script>
+<script defer src="js/oda/etkinlik.js"></script>
+<script defer src="js/oda/duzen.js"></script>
+<script defer src="js/fizik/temas.js"></script>
+<script defer src="js/sahne/kamera.js"></script>
+<script defer src="js/karakter/adaptor.js"></script>
+<script defer src="js/karakter/gercekci.js"></script>
+<script defer src="js/karakter/beden.js"></script>
+<script defer src="js/oda/kiyafet-atolye.js"></script>
+<script defer src="js/karakter/yukle.js"></script>
+<script defer src="js/karakter/katmanlar.js"></script>
+<script defer src="js/sahne/iskelet-gorunum.js"></script>
+<script defer src="js/sahne/performans.js"></script>
+<script defer src="js/motor/dongu.js"></script>
+<script defer src="js/arayuz/isaretci.js"></script>
+<script defer src="js/motor/komut.js"></script>
+<script defer src="js/beyin/kisilik.js"></script>
+<script defer src="js/beyin/beyin.js"></script>
+<script defer src="js/beyin/hafiza.js"></script>
+<script defer src="js/beyin/komutlar.js"></script>
+<script defer src="js/beyin/yerel-cevirici.js"></script>
+<script defer src="js/arayuz/atolye.js"></script>
+<script defer src="js/arayuz/arayuz.js"></script>
+<script defer src="js/arayuz/cekmece.js"></script>
+<script defer src="js/beyin/dis-baglanti.js"></script>
+<script defer src="js/beyin/ic-dunya.js"></script>
+<script defer src="js/arayuz/gunluk.js"></script>
+<script defer src="js/arayuz/ekranlar.js"></script>
+<script defer src="js/arayuz/ek-ekranlar.js"></script>
+<script defer src="js/basla.js"></script>
+</body>
+</html>
