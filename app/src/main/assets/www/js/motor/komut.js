@@ -15,6 +15,7 @@ const SOZLESME = {
   "durus": "ayakta | otur | yere_otur | uzan  — kalıcı duruş; otururken konuşma ve jestler duruşu bozmaz",
   "ozel": "kullanıcının tanımladığı komutun id'si — o komutun adımları çalışır",
   "kiyafet_tasarla": "{ad, temel: gunluk|elbise|ev|pijama|spor|ic, ust: '#renk', alt: '#renk', desen: duz|puantiye|cizgili|ekose|cicekli|yildizli}  — yeni kıyafet tasarlar, gardıroba ekler ve giyer",
+  "telefon": "{is, …} — telefonda iş yapar: alarm, zamanlayıcı, hatırlatma, arama, mesaj, uygulama, fener, yol, müzik, ses, takvim, ayar, web, not (bkz. TELEFON İŞLERİ)",
   "disari": "cik — evinden çıkıp kullanıcının ana ekranına gidersin (yalnızca kullanıcı isterse)",
   "kiyafet": "gunluk | elbise | ev | pijama | spor | ic  — gardıroba gidip kapağın önünde kıyafet değiştirir",
   "hareket": "{ad, sure, dongu, donem, simetrik, kareler:[…]}  — anında yeni hareket; Nova bunu öğrenir ve saklar"
@@ -34,6 +35,7 @@ function dogrula(k){
   if (k.don !== undefined && k.don !== 'kamera' && !Number.isFinite(+k.don)) h.push('don "kamera" ya da bir derece olmalı');
   if (k.durus !== undefined && !DURUSLAR.includes(k.durus) && k.durus !== 'kalk') h.push(`"${k.durus}" bir duruş değil (ayakta | otur | yere_otur | uzan)`);
   if (k.kiyafet !== undefined && !KIYAFET_TANIM[k.kiyafet]) h.push(`"${k.kiyafet}" diye bir kıyafet yok`);
+  if (k.telefon !== undefined && (typeof k.telefon !== 'object' || !TELEFON_ISLER[k.telefon?.is])) h.push(`telefon işi anlaşılamadı (${k.telefon?.is || '?'})`);
   return h;
 }
 let nesil = 0, komutMesgul = null;
@@ -62,6 +64,13 @@ async function calistir(komut, {kaynak='json'}={}){
     const bedensel = k.git !== undefined || k.don !== undefined || (k.eylem && tumBeden(k.eylem)) || (k.poz && Object.keys(k.poz).some(b => /Leg|Foot|Toes|hips|_kok/.test(b)));
     if (bedensel && !k.aktivite && !k.durus){ if (akt.ad) await aktiviteBitir(); else if (durus.w > 0.02) await durusAyarla('ayakta'); if (benim !== nesil) return; }
     if (k.durus){ if (k.soz) erkenKonusma = konus(String(k.soz).slice(0, 400)); await durusAyarla(k.durus); if (benim !== nesil) return; }
+    if (k.telefon){   // önce işi yap; sonucu (olmadıysa nedenini, okuduysa bilgiyi) Nova söylesin
+      const r = await telefonYap(k.telefon);
+      if (benim !== nesil) return;
+      const bilgi = !r.ok || TELEFON_OKUMA.has(k.telefon.is);
+      if (bilgi || !k.soz) k.soz = r.mesaj;
+      if (bilgi && r.mesaj){ sohbetEkle(r.ok ? 'nova' : 'sistem', r.mesaj); try { gecmis.push({role:'assistant', content:JSON.stringify({soz:r.mesaj, komutlar:[]})}); gecmisKaydet(); } catch(e){} }
+    }
     if (k.disari){
       if (benim !== nesil) return;
       await disariCik(k.soz ? String(k.soz).slice(0, 200) : undefined);

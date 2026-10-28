@@ -7,6 +7,7 @@
    Yüzeyler: simgelerin üst kenarı, arama çubuğu / widget üstü, ekranın altı.
    ========================================================= */
 const DIS = window.NovaDisari || null;
+const sohbetEkle = (kim, metin) => { if (metin && kim !== 'ben') balon(String(metin).slice(0, 160), 4); };   // telefon.js bunu kullanır
 const TEST = !DIS;
 if (TEST) document.body.classList.add('test');
 const AYAR = Object.assign({ boy:'orta', heryerde:false, sesli:true, konuskan:true, simgeOlcek:0.62, cerceve:false }, depo.oku('nova-disari', {}));
@@ -488,6 +489,10 @@ async function cevapla(metin){
   try { y = await aiCevap(metin); } catch(e){ y = null; }
   if (!y) y = yerelCevap(metin);
   eylemYap(y.eylem);
+  if (y.telefon && typeof telefonYap === 'function' && TELEFON_ISLER[y.telefon.is]){
+    const r = await telefonYap(y.telefon);
+    if (!r.ok || TELEFON_OKUMA.has(y.telefon.is)) y.soz = r.mesaj; else if (!y.soz) y.soz = r.mesaj;
+  }
   soyle(y.soz || '…', y.ifade && y.ifade !== 'notr' ? y.ifade : 'mutlu');
 }
 function DIS_BAGLAM(){
@@ -495,7 +500,8 @@ function DIS_BAGLAM(){
   const adlar = [...new Set(SIMGE.map(s => s.ad))].slice(0, 30).join(', ');
   return `ŞU AN: Evinden (uygulamandan) dışarı çıktın; kullanıcının telefonunun ANA EKRANINDA, simgelerin arasında küçücük bir hâlde geziyorsun (simgelerin üstüne oturuyor, arkalarına saklanıyor, aralarında yürüyorsun). Saat ${saat}.${sonPil ? ` Telefonun pili %${sonPil.yuzde}${sonPil.sarj ? ', şarj oluyor' : ''}.` : ''}${adlar ? ` Ana ekrandaki simgeler: ${adlar}.` : ''}
 Kullanıcı sana çift dokunup konuştu. Kısa cevap ver (en fazla 2 cümle; konuşma balonuna sığmalı).
-YANIT yalnızca JSON: {"soz":"…","ifade":"mutlu|uzgun|kizgin|rahat|saskin|notr","eylem":"${EYLEMLER.join('|')}"}
+YANIT yalnızca JSON: {"soz":"…","ifade":"mutlu|uzgun|kizgin|rahat|saskin|notr","eylem":"${EYLEMLER.join('|')}","telefon":{…} (isteğe bağlı)}
+${typeof telefonMetni === 'function' ? telefonMetni().replace('komutlara {"telefon":{…}} ekleyerek', 'yanıta "telefon":{…} ekleyerek') : ''}
 eylem: kullanıcı bir şey yapmanı isterse ona uygun olanı seç ("eve gel/dön" → eve_don, "dans et" → dans, "saklan" → saklan, "otur" → otur, "uyu" → uyu, "zıpla" → zipla, "yanıma gel / aşağı gel" → yanina_gel); yoksa "yok".`;
 }
 async function aiCevap(metin){
@@ -619,6 +625,8 @@ window.novaDis = (olay, v) => {
       if (!gorunur){ N.gizliBas = performance.now()/1000; platform.sus(); }
     }
     else if (olay === 'eveDon') eveDon();
+    else if (olay === 'uyan'){ if (!N.dinliyor && !['giris', 'bitti'].includes(N.durum)){ jestYap('el_salla'); soyle(rastgele(['Efendim?', 'Buradayım!']), 'mutlu', 1.6); setTimeout(() => { const bekle_ = () => N.konusuyor ? setTimeout(bekle_, 150) : dinle(); bekle_(); }, 900); } }
+    else if (olay === 'hatirlat'){ jestYap('el_salla'); soyle('Hatırlatma: ' + v.metin, 'saskin', 8); }
   } catch(e){ console.error('novaDis', olay, e); }
 };
 

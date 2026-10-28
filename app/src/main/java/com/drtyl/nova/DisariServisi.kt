@@ -63,6 +63,10 @@ class DisariServisi : Service() {
         }
         fun eveCagir(ctx: Context) { if (calisiyor) ctx.startService(Intent(ctx, DisariServisi::class.java).setAction(EYLEM_EVE)) }
         fun hemenDur(ctx: Context) { if (calisiyor) ctx.startService(Intent(ctx, DisariServisi::class.java).setAction(EYLEM_HEMEN)) }
+        @Volatile private var ornek: DisariServisi? = null
+        /** "Nova ses ver": dışarıdaki Nova dinlemeye başlasın */
+        fun uyandir(ctx: Context) { ornek?.let { s -> s.ana.post { s.olay("uyan") } } }
+        fun hatirlat(ctx: Context, metin: String) { ornek?.let { s -> s.ana.post { s.olay("hatirlat", JSONObject().put("metin", metin)) } } }
     }
 
     private val ana = Handler(Looper.getMainLooper())
@@ -89,6 +93,7 @@ class DisariServisi : Service() {
     override fun onCreate() {
         super.onCreate()
         calisiyor = true
+        ornek = this
         onPlanaGec()
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
         pencereleriKur()
@@ -290,6 +295,7 @@ class DisariServisi : Service() {
     override fun onDestroy() {
         durduruluyor = true
         calisiyor = false
+        if (ornek === this) ornek = null
         ana.removeCallbacksAndMessages(null)
         if (IkonDurumu.dinleyici != null) IkonDurumu.dinleyici = null
         try { unregisterReceiver(ekranAlici) } catch (_: Throwable) {}

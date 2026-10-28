@@ -33,11 +33,11 @@ class NovaSes(private val ctx: Context, private val olay: (String, String) -> Un
                     ttsHazir = r != TextToSpeech.LANG_MISSING_DATA && r != TextToSpeech.LANG_NOT_SUPPORTED
                     if (!ttsHazir) { t.setLanguage(Locale.getDefault()); ttsHazir = true }
                     t.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                        override fun onStart(id: String?) { olay("konusmaBasladi", "") }
-                        override fun onDone(id: String?) { olay("konusmaBitti", "") }
+                        override fun onStart(id: String?) { Kulak.mesgulAyarla("tts", true); olay("konusmaBasladi", "") }
+                        override fun onDone(id: String?) { Kulak.mesgulAyarla("tts", false); olay("konusmaBitti", "") }
                         @Deprecated("eski imza")
-                        override fun onError(id: String?) { olay("konusmaBitti", "") }
-                        override fun onError(id: String?, code: Int) { olay("konusmaBitti", "") }
+                        override fun onError(id: String?) { Kulak.mesgulAyarla("tts", false); olay("konusmaBitti", "") }
+                        override fun onError(id: String?, code: Int) { Kulak.mesgulAyarla("tts", false); olay("konusmaBitti", "") }
                     })
                     olay("seslerHazir", "")
                 }
@@ -93,8 +93,9 @@ class NovaSes(private val ctx: Context, private val olay: (String, String) -> Un
                         override fun onRmsChanged(rmsdB: Float) { olay("seviye", rmsdB.toString()) }
                         override fun onBufferReceived(buffer: ByteArray?) {}
                         override fun onEndOfSpeech() { olay("dusunuyor", "") }
-                        override fun onError(error: Int) { olay("dinlemeHatasi", error.toString()) }
+                        override fun onError(error: Int) { Kulak.mesgulAyarla("stt", false); olay("dinlemeHatasi", error.toString()) }
                         override fun onResults(results: Bundle?) {
+                            Kulak.mesgulAyarla("stt", false)
                             val list = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                             olay("sonuc", list?.firstOrNull() ?: "")
                         }
@@ -112,13 +113,15 @@ class NovaSes(private val ctx: Context, private val olay: (String, String) -> Un
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             }
-            recognizer?.startListening(intent)
+            Kulak.mesgulAyarla("stt", true)
+            // kulak mikrofonu bırakana kadar kısa bir bekleme (iki tanıyıcı aynı anda mikrofonu tutmasın)
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ try { recognizer?.startListening(intent) } catch (_: Throwable) { Kulak.mesgulAyarla("stt", false) } }, if (Kulak.servis != null) 250 else 0)
         } catch (e: Throwable) {
             olay("hata", e.message ?: "Dinleme başlatılamadı")
         }
     }
 
-    fun dinlemeyiBirak() { try { recognizer?.stopListening() } catch (_: Throwable) {} }
+    fun dinlemeyiBirak() { try { recognizer?.stopListening() } catch (_: Throwable) {}; Kulak.mesgulAyarla("stt", false) }
 
     fun kapat() {
         try { tts?.stop(); tts?.shutdown() } catch (_: Throwable) {}

@@ -37,7 +37,29 @@ class MainActivity : Activity() {
     companion object {
         private const val MIC_IZNI = 4343
         private const val BILDIRIM_IZNI = 4444
+        private const val GENEL_IZIN = 4545
         private const val KANAL = "nova"
+        @Volatile var onde = false
+    }
+    private var uyanBekliyor = false
+    private var hatirlatmaBekliyor: String? = null
+
+    /** "Nova ses ver" ya da hatırlatma bildirimiyle açıldıysa */
+    private fun niyetIsle(i: Intent?) {
+        if (i == null) return
+        if (i.getBooleanExtra("uyan", false)) {
+            i.removeExtra("uyan")
+            uyanBekliyor = true
+            if (Build.VERSION.SDK_INT >= 27) { setShowWhenLocked(true); setTurnScreenOn(true) }
+            js("if (window.novaUyandi) { NovaNative.uyanmaVarMi(); novaUyandi(); }")   // sayfa henüz yüklenmediyse açılışta sorar
+        }
+        i.getStringExtra("hatirlatma")?.let { m -> i.removeExtra("hatirlatma"); hatirlatmaBekliyor = m; js("if (window.novaHatirlat) { NovaNative.hatirlatmaAl(); novaHatirlat(${JSONObject.quote(m)}); }") }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        niyetIsle(intent)
     }
 
     private fun js(kod: String) { if (::web.isInitialized) web.evaluateJavascript(kod, null) }
@@ -55,6 +77,7 @@ class MainActivity : Activity() {
         web.loadUrl("https://${Varlik.ALAN}/index.html")
         yuklendi = true
         bildirimKanaliniKur()
+        niyetIsle(intent)
     }
 
     // ---------------------------------------------------------------- BİLDİRİM
@@ -87,10 +110,12 @@ class MainActivity : Activity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         val izin = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
         if (requestCode == BILDIRIM_IZNI) { js("window.__novaBildirimIzni && window.__novaBildirimIzni($izin)"); return }
+        if (requestCode == GENEL_IZIN) { js("window.__novaIzin && window.__novaIzin('${permissions.firstOrNull() ?: ""}',$izin)"); return }
         if (requestCode == MIC_IZNI) {
             if (izin && dinlemeBekliyor) ses.dinle { }
             else if (!izin) js("window.__novaSes && window.__novaSes('hata','Mikrofon izni verilmedi.')")
             dinlemeBekliyor = false
+            if (izin) Kulak.baslat(this)
             js("window.__novaIzinDegisti && window.__novaIzinDegisti()")
         }
     }
@@ -118,11 +143,20 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         super.onPause()
+        onde = false
         js("window.novaDuraklat && window.novaDuraklat()")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // kilit ekranının üstünde gösterme yalnızca "Nova ses ver" oturumu içindi
+        if (Build.VERSION.SDK_INT >= 27) { setShowWhenLocked(false); setTurnScreenOn(false) }
     }
 
     override fun onResume() {
         super.onResume()
+        onde = true
+        Kulak.baslat(this)   // açıksa dinlemeye devam (Android mikrofonu ancak uygulama öndeyken başlatmaya izin verir)
         // dışarıdaysa: eve gel (dış pencere kapanır, odada kapıdan girer)
         if (DisariServisi.calisiyor) {
             DisariServisi.hemenDur(this)
@@ -190,5 +224,41 @@ class MainActivity : Activity() {
 
         @JavascriptInterface
         fun eveCagir() { main.post { DisariServisi.hemenDur(this@MainActivity) } }
+
+        @JavascriptInterface
+        override fun izinIste(izin: String) {
+            main.post {
+                if (checkSelfPermission(izin) == PackageManager.PERMISSION_GRANTED) js("window.__novaIzin && window.__novaIzin('$izin',true)")
+                else requestPermissions(arrayOf(izin), GENEL_IZIN)
+            }
+        }
+
+        @JavascriptInterface
+        fun uyanmaVarMi(): Boolean { val v = uyanBekliyor; uyanBekliyor = false; return v }
+
+        @JavascriptInterface
+        fun hatirlatmaAl(): String { val m = hatirlatmaBekliyor ?: ""; hatirlatmaBekliyor = null; return m }
+
+        /** pil iyileştirmesinden muaf tut (Nova dinlemeyi bırakmasın) */
+        @JavascriptInterface
+        fun pilKisitiKaldir() {
+            main.post {
+                try { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))) }
+                catch (_: Throwable) { ayarAc(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS, false) }
+            }
+        }
+
+        /** Xiaomi / Redmi / POCO: otomatik başlatma ve "arka planda açılır pencere" izinleri */
+        @JavascriptInterface
+        fun xiaomiIzinleri(tur: String) {
+            main.post {
+                val niyetler = if (tur == "otobaslat") listOf(
+                    Intent().setClassName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"))
+                else listOf(
+                    Intent("miui.intent.action.APP_PERM_EDITOR").setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity").putExtra("extra_pkgname", packageName),
+                    Intent("miui.intent.action.APP_PERM_EDITOR").setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.AppPermissionsEditorActivity").putExtra("extra_pkgname", packageName))
+                if (niyetler.none { try { startActivity(it); true } catch (_: Throwable) { false } }) ayarAc(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, true)
+            }
+        }
     }
 }

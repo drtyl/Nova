@@ -22,6 +22,16 @@ jobs:
         with:
           gradle-version: "8.9"
 
+      # "Nova ses ver" için telefonda çalışan Türkçe ses modeli (Vosk, Apache 2.0, ~35 MB)
+      - name: Türkçe ses modelini indir
+        run: |
+          curl -fsSL --retry 3 -o model.zip https://alphacephei.com/vosk/models/vosk-model-small-tr-0.3.zip
+          unzip -q model.zip -d model_gecici
+          mkdir -p app/src/main/assets/model-tr
+          cp -r model_gecici/vosk-model-small-tr-0.3/* app/src/main/assets/model-tr/
+          echo "vosk-small-tr-0.3" > app/src/main/assets/model-tr/uuid
+          du -sh app/src/main/assets/model-tr
+
       - name: APK oluştur
         run: gradle assembleRelease --no-daemon --stacktrace
 

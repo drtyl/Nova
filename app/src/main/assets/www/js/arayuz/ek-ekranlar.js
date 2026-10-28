@@ -39,7 +39,7 @@ function izinleriCiz(){
   $('dCik').disabled = !d.ustteGoster;
   $('dDurum').textContent = d.ustteGoster ? (d.erisim ? '' : 'Simge izni olmadan ekranın altında gezer.') : 'Önce "Üstte gösterme" iznini ver.';
 }
-window.__novaIzinDegisti = () => { try { izinleriCiz(); } catch(e){} };
+window.__novaIzinDegisti = () => { try { izinleriCiz(); kulakCiz(); } catch(e){} };
 function disariEkranKur(){
   $('dBoy').value = DIS_AYAR.boy; $('dSesli').checked = DIS_AYAR.sesli; $('dKonuskan').checked = DIS_AYAR.konuskan; $('dHeryerde').checked = DIS_AYAR.heryerde;
   $('dSimge').value = Math.round(DIS_AYAR.simgeOlcek*100); $('dSimgeD').textContent = $('dSimge').value;
@@ -86,6 +86,64 @@ window.novaEveGeldi = async () => {
 };
 /* güvenlik: bir şey ters gider de küçük kalırsa düzelt */
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !disariCikiyor && govde.scale.x < 0.99) setTimeout(() => { if (govde.scale.x < 0.99 && !disariCikiyor) olcekGecisi(1, 0.4); }, 1500); });
+
+/* ---------------- sesle çağır ("Nova ses ver") ---------------- */
+function kulakDurumu(){ try { const r = JSON.parse(NATIVE.kulakDurumu()); return r.ok ? r.data : null; } catch(e){ return null; } }
+function kulakCiz(){
+  const kap = $('kulakIzinler'); if (!kap) return;
+  const d = NATIVE?.kulakDurumu ? kulakDurumu() : null;
+  if (!d){ $('kulakAc').disabled = true; $('kulakNot').textContent = 'Yalnızca telefondaki uygulamada çalışır.'; return; }
+  $('kulakAc').checked = d.acik; if (document.activeElement !== $('kulakIfade')) $('kulakIfade').value = d.ifade;
+  $('kulakNot').textContent = d.acik ? (d.calisiyor ? `${d.durum}${d.son ? ' · son duyduğu: “' + d.son.slice(0, 40) + '”' : ''}` : d.durum) : 'kapalı';
+  kap.innerHTML = '';
+  const satir = (tamam, ad, aciklama, dugme, f) => kap.append(eleman('div', {className:'izin' + (tamam ? ' tamam' : '')},
+    eleman('i', {}, tamam ? '✓' : '!'), eleman('span', {}, ad, eleman('small', {}, aciklama)), tamam === true ? null : eleman('button', {className:'btn ikincil kucuk', type:'button', on:{click:f}}, dugme)));
+  satir(d.mikrofon, 'Mikrofon', 'Gerekli', 'İzin ver', () => NATIVE.mikrofonIzniIste());
+  satir(d.ustteGoster, 'Üstte gösterme', 'Gerekli: başka uygulamadayken ya da ekran kapalıyken öne gelebilsin', 'İzin ver', () => NATIVE.ustteGosterIzniAc());
+  satir(d.pilKisitsiz, 'Pil kısıtlaması yok', 'Telefon Nova\'yı arka planda kapatmasın', 'Kaldır', () => NATIVE.pilKisitiKaldir());
+  if (d.xiaomi){
+    satir(null, 'Otomatik başlatma (Xiaomi)', 'Açılan listede Nova\'yı aç', 'Aç', () => NATIVE.xiaomiIzinleri('otobaslat'));
+    satir(null, 'Arka planda açılır pencere (Xiaomi)', 'Diğer izinler → "Arka planda çalışırken açılır pencereleri göster" → İzin ver; "Kilit ekranında göster" de', 'Aç', () => NATIVE.xiaomiIzinleri('pencere'));
+  }
+}
+function kulakEkranKur(){
+  $('kulakAc').addEventListener('change', e => {
+    const d = kulakDurumu(); if (!d) return;
+    if (e.target.checked && !d.mikrofon) NATIVE.mikrofonIzniIste();
+    NATIVE.kulakAyarla(e.target.checked, $('kulakIfade').value.trim() || 'nova ses ver');
+    setTimeout(kulakCiz, 600);
+  });
+  $('kulakIfade').addEventListener('change', e => { const d = kulakDurumu(); if (d) NATIVE.kulakAyarla(d.acik, e.target.value.trim() || 'nova ses ver'); });
+  kulakCiz(); setInterval(() => { if (!$('s-nova')?.hidden) kulakCiz(); }, 2500);
+}
+/* uyandırıldı: el sallar, "Efendim?" der, sonra dinler */
+window.novaUyandi = () => {
+  if (!vrm){ window.__uyanBekle = true; return; }
+  try { document.querySelector('.rehber')?.remove(); cekmece(false); } catch(e){}
+  if (govde.scale.x < 0.99) govde.scale.setScalar(1);
+  sesliYanit = true;
+  if (mik.kapat) return;
+  calistir([{eylem:'el_salla', soz:rastgeleSec(['Efendim?', 'Buradayım!', 'Dinliyorum.', 'Söyle bakalım?'])}]).catch(() => {});
+  const bas = performance.now();
+  const dinlemeyeGec = () => { if (platform.konusuyor && performance.now() - bas < 5000) return setTimeout(dinlemeyeGec, 150); if (!mik.kapat) mikrofon(); };
+  setTimeout(dinlemeyeGec, 1100);
+};
+window.novaHatirlat = m => { if (!vrm) return setTimeout(() => window.novaHatirlat(m), 800); sesliYanit = true; calistir([{eylem:'el_salla', soz:'Hatırlatma: ' + m}]).catch(() => {}); };
+
+/* ---------------- hatırlatmalar ve notlar ---------------- */
+async function asistanListeCiz(){
+  const kap = $('asistanListe'); if (!kap) return;
+  let h = [];
+  try { if (NATIVE?.telefon){ const r = await yerelTelefon({is:'hatirlatmalar'}); h = r.ok ? (r.veri || []) : []; } } catch(e){}
+  kap.innerHTML = '';
+  for (const x of h) kap.append(eleman('div', {className:'kayit'}, eleman('span', {className:'tur'}, '⏰'),
+    eleman('span', {}, `${new Date(x.zaman).toLocaleString('tr-TR', {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})} · ${x.metin}`),
+    eleman('button', {className:'sil', type:'button', 'aria-label':'Sil', on:{click:async () => { await yerelTelefon({is:'hatirlatma_sil', id:x.id}); asistanListeCiz(); }}}, '×')));
+  for (const n of [...NOTLAR].reverse()) kap.append(eleman('div', {className:'kayit'}, eleman('span', {className:'tur'}, n.liste === 'genel' ? '📝' : n.liste),
+    eleman('span', {}, n.metin), eleman('button', {className:'sil', type:'button', 'aria-label':'Sil', on:{click:() => { NOTLAR = NOTLAR.filter(x => x.id !== n.id); notlarKaydet(); }}}, '×')));
+  if (!h.length && !NOTLAR.length) kap.append(eleman('p', {className:'not'}, 'Henüz hatırlatma ya da not yok.'));
+  $('asistanSayi').textContent = (h.length || NOTLAR.length) ? `${h.length} hatırlatma · ${NOTLAR.length} not` : '';
+}
 
 /* ---------------- beden ---------------- */
 function bedenEkranKur(){
@@ -137,13 +195,20 @@ function rehberAc(){
 function ekEkranlariKur(){
   try { disariEkranKur(); } catch(e){ console.warn('dışarı ekranı', e); }
   try { bedenEkranKur(); } catch(e){ console.warn('beden ekranı', e); }
+  try { kulakEkranKur(); } catch(e){ console.warn('kulak ekranı', e); }
+  try { asistanListeCiz(); } catch(e){}
   $('bSifirla').addEventListener('click', () => { Object.assign(BEDEN, BEDEN_VARSAYILAN); bedenKaydet(); bedenUygula(); bedenEkranKur(); bedenSonrasi(); });
   $('hataYenile').addEventListener('click', hataGunluguCiz);
   $('hataKopyala').addEventListener('click', async () => { const m = hataGunluguCiz(); try { await navigator.clipboard.writeText(m); $('hataKopyala').textContent = 'Kopyalandı'; } catch(e){ const r = document.createRange(); r.selectNodeContents($('hataGunluk')); getSelection().removeAllRanges(); getSelection().addRange(r); } });
   $('hataTemizle').addEventListener('click', () => { hataGunlugu.length = 0; try { NATIVE?.gunlukTemizle?.(); } catch(e){} hataGunluguCiz(); });
   $('rehberAc').addEventListener('click', () => { try { cekmece(false); } catch(e){} rehberAc(); });
   document.querySelector('[data-s="ayar"]')?.addEventListener('click', () => setTimeout(hataGunluguCiz, 50));
-  document.querySelector('[data-s="nova"]')?.addEventListener('click', () => setTimeout(izinleriCiz, 50));
+  document.querySelector('[data-s="nova"]')?.addEventListener('click', () => setTimeout(() => { izinleriCiz(); kulakCiz(); asistanListeCiz(); }, 50));
+  // "Nova ses ver" ile ya da hatırlatma bildirimiyle açıldıysa
+  const uyanKontrol = () => { if (!vrm) return setTimeout(uyanKontrol, 400);
+    if (window.__uyanBekle || NATIVE?.uyanmaVarMi?.()){ window.__uyanBekle = false; setTimeout(novaUyandi, 300); }
+    const h = NATIVE?.hatirlatmaAl?.(); if (h) setTimeout(() => novaHatirlat(h), 600); };
+  uyanKontrol();
   if (!depo.oku('nova-ilk-acilis', 0)) setTimeout(() => { if (!document.querySelector('.rehber')) rehberAc(); }, 2500);
 }
 ekEkranlariKur();

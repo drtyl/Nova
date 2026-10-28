@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -120,6 +121,29 @@ open class NovaKopru(
             .put("mikrofon", ses.mikrofonIzniVar())
             .put("disarida", DisariServisi.calisiyor))
     } catch (e: Throwable) { hata(e) }
+
+    // ---- telefonda iş yap (Telefon.kt). Sonuç: window.__novaTelefon(id, json)
+    @JavascriptInterface
+    fun telefon(id: String, json: String) {
+        main.post {
+            val r = try { Telefon.calistir(ctx, JSONObject(json)) } catch (e: Throwable) { JSONObject().put("ok", false).put("mesaj", e.message ?: "hata") }
+            js("window.__novaTelefon && window.__novaTelefon('$id',$r)")
+        }
+    }
+
+    /** izin iste (yalnızca uygulama açıkken); sonuç: window.__novaIzin(izin, verildi) */
+    @JavascriptInterface
+    open fun izinIste(izin: String) { main.post { js("window.__novaIzin && window.__novaIzin('$izin',false)") } }
+
+    // ---- kulak ("Nova ses ver")
+    @JavascriptInterface
+    fun kulakDurumu(): String = ok(JSONObject().put("acik", Kulak.acikMi(ctx)).put("ifade", Kulak.ifade(ctx)).put("durum", Kulak.durum)
+        .put("calisiyor", Kulak.servis != null).put("son", Kulak.sonDuyulan).put("mikrofon", ses.mikrofonIzniVar())
+        .put("pilKisitsiz", try { (ctx.getSystemService(android.os.PowerManager::class.java))?.isIgnoringBatteryOptimizations(ctx.packageName) == true } catch (_: Throwable) { false })
+        .put("ustteGoster", Settings.canDrawOverlays(ctx)).put("xiaomi", Build.MANUFACTURER.lowercase().let { it.contains("xiaomi") || it.contains("redmi") || it.contains("poco") }))
+
+    @JavascriptInterface
+    open fun kulakAyarla(acik: Boolean, ifade: String) { main.post { Kulak.ayarla(ctx, acik, ifade) } }
 
     @JavascriptInterface
     fun gunluk(): String = Gunluk.hepsi()

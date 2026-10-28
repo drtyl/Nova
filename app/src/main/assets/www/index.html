@@ -114,6 +114,18 @@
 
     <!-- NOVA: KİŞİLİK + HAFIZA -->
     <div class="icerik" id="s-nova" hidden>
+      <div class="bolum" id="kulakBolum">
+        <span class="etiket">Sesle çağır</span>
+        <p class="not"><b>"Nova ses ver"</b> dediğinde ekran kapalı olsa bile gelir ve seni dinler. Ses tanıma telefonun içinde, internetsiz çalışır: yalnızca bu sözü bekler, hiçbir şey kaydetmez ve hiçbir yere göndermez. Bu yüzden mikrofon göstergesi (yeşil nokta) hep yanar.</p>
+        <label class="anahtar"><span>"Nova ses ver" deyince uyansın<small id="kulakNot">kapalı</small></span><input type="checkbox" id="kulakAc"></label>
+        <label class="blok">Uyandırma sözü<input type="text" id="kulakIfade" maxlength="30" placeholder="nova ses ver"></label>
+        <div class="izinler" id="kulakIzinler"></div>
+      </div>
+      <div class="bolum">
+        <div class="baslik"><span class="etiket">Hatırlatmalar ve notlar</span><span class="not" id="asistanSayi"></span></div>
+        <p class="not">Nova'ya "yarın 9'da ilacımı hatırlat" ya da "not al: süt, ekmek" de; burada görünür.</p>
+        <div class="liste" id="asistanListe"></div>
+      </div>
       <div class="bolum" id="disariBolum">
         <span class="etiket">Dışarı çık</span>
         <p class="not">Nova evinden (bu uygulamadan) çıkıp ana ekranında yaşar: simgelerin üstüne oturur, arkalarına saklanır, aralarında gezer. <b>Çift dokun:</b> konuş · <b>basılı tut / sürükle:</b> taşı · <b>dokun:</b> tepki verir. Uygulamayı açınca eve döner; bildirimden de çağırabilirsin.</p>
@@ -392,6 +404,7 @@
 <script defer src="js/beyin/beyin.js"></script>
 <script defer src="js/beyin/hafiza.js"></script>
 <script defer src="js/beyin/komutlar.js"></script>
+<script defer src="js/beyin/telefon.js"></script>
 <script defer src="js/beyin/yerel-cevirici.js"></script>
 <script defer src="js/arayuz/atolye.js"></script>
 <script defer src="js/arayuz/arayuz.js"></script>

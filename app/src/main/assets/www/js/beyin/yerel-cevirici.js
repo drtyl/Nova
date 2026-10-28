@@ -20,7 +20,8 @@ const KIYAFET_SOZ = [[/elbise/, 'elbise'], [/pijama|gecelik/, 'pijama'], [/spor|
 const DUYGU = [[/gül|mutlu|sevin/, 'mutlu'], [/kız|sinirlen/, 'kizgin'], [/üzül|üzgün|ağla/, 'uzgun'], [/şaşır|şaşkın/, 'saskin'], [/rahatla|sakin/, 'rahat']];
 const RUH = [[/neşeli/, 'neseli'], [/enerjik|hareketli/, 'enerjik'], [/merak/, 'merakli'], [/gergin/, 'gergin'], [/yorgun|uykulu/, 'yorgun'], [/hüzünlü|morali bozuk/, 'uzgun'], [/normal ol|nötr/, 'notr']];
 function metniCevir(metin){
-  const parcalar = metin.split(/\s*(?:,|\bsonra\b|\bardından\b|\bve\b)\s*/i).filter(Boolean);
+  const butun = /hatırlat|not al|mesaj|yaz\b/.test(metin.toLocaleLowerCase('tr'));   // bu cümleler bölünmesin ("10 dakika sonra … hatırlat")
+  const parcalar = butun ? [metin] : metin.split(/\s*(?:,|\bsonra\b|\bardından\b|\bve\b)\s*/i).filter(Boolean);
   const komutlar = [];
   for (const p0 of parcalar){
     const tirnak = p0.match(/["'“”‘’](.+?)["'“”‘’]/);
@@ -29,6 +30,26 @@ function metniCevir(metin){
     if (tirnak) k.soz = tirnak[1];
     const desene = p.match(/(?:de ki|söyle)[:\s]+(.+)/); if (!k.soz && desene) k.soz = desene[1];
     if (/dışarı (çık|git)|ana ekran(a|ıma)/.test(p)){ k.disari = 'cik'; komutlar.push(k); continue; }
+    { // telefon işleri (yapay zekâ yokken de)
+      let t = null, m;
+      if ((m = p.match(/(\d{1,2})[:.](\d{2}).*alarm|alarm.*?(\d{1,2})[:.](\d{2})/))) t = {is:'alarm', saat:+(m[1] ?? m[3]), dakika:+(m[2] ?? m[4])};
+      else if ((m = p.match(/(?:saat\s*)?(\d{1,2})\s*'?(?:e|a|ye|ya)?\s*alarm|alarm.*?saat\s*(\d{1,2})/))) t = {is:'alarm', saat:+(m[1] ?? m[2]), dakika:0};
+      else if ((m = p.match(/(\d+)\s*(saniye|sn|dakika|dk|saat)(?:lık)?\s*(?:zamanlayıcı|sayaç|geri sayım)/))) t = {is:'zamanlayici', saniye:+m[1]*({saniye:1, sn:1, dakika:60, dk:60, saat:3600}[m[2]])};
+      else if ((m = p.match(/(\d+)\s*(dakika|dk|saat)\s*sonra\s+(.+?)\s*(?:diye\s+)?hatırlat/))) t = {is:'hatirlat', zaman:{dakika_sonra:+m[1]*(m[2] === 'saat' ? 60 : 1)}, metin:m[3]};
+      else if (/fener/.test(p)) t = {is:'fener', acik:!/kapat|söndür/.test(p)};
+      else if ((m = p.match(/not al[:,\s]+(.+)/))) t = {is:'not_ekle', metin:m[1]};
+      else if (/notlar(ım|ımı)?\b|notlarımda/.test(p)) t = {is:'notlar'};
+      else if (/takvim|bugün ne(ler)? var|yarın ne(ler)? var|programım/.test(p)) t = {is:'takvim', gun:/yarın/.test(p) ? 1 : 0};
+      else if (/hatırlatmalar/.test(p)) t = {is:'hatirlatmalar'};
+      else if (/müziği? (durdur|kapat)/.test(p)) t = {is:'muzik', eylem:'durdur'};
+      else if (/sonraki şarkı|şarkıyı geç/.test(p)) t = {is:'muzik', eylem:'sonraki'};
+      else if (/müzik (aç|çal)|müziği (aç|başlat)/.test(p)) t = {is:'muzik', eylem:'oynat'};
+      else if (/sesi (aç|arttır|yükselt)/.test(p)) t = {is:'ses', yon:'arttir'};
+      else if (/sesi (kıs|azalt)/.test(p)) t = {is:'ses', yon:'azalt'};
+      else if ((m = p.match(/^(.+?)'?(?:[ıiuü]|y[ıiuü])?\s+ara$/))) t = {is:'ara', kisi:m[1]};
+      else if ((m = p.match(/^(.+?)'?(?:[ıiuü]|y[ıiuü])?\s+(?:uygulamasını\s+)?aç$/)) && !/(kapı|perde|ışık|lamba|dolap)/.test(m[1])) t = {is:'uygulama', ad:m[1]};
+      if (t){ k.telefon = t; komutlar.push(k); continue; }
+    }
     if (/yere otur|yerde otur|bağdaş/.test(p)) k.durus = 'yere_otur';
     else if (/uzan|sırtüstü/.test(p)) k.durus = 'uzan';
     else if (/\botur|koltuğa/.test(p)) k.durus = 'otur';

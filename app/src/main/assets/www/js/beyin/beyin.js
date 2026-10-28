@@ -79,6 +79,7 @@ function sohbetKurallari(){
 ${odaMetni()}
 ${typeof hafizaMetni === 'function' ? hafizaMetni() : ''}
 ${typeof komutlarMetni === 'function' ? komutlarMetni() : ''}
+${typeof telefonMetni === 'function' ? telefonMetni() : ''}
 Kullanıcıyla Türkçe, kısa (1–2 cümle), doğal ve kişiliğine uygun konuş.
 YANITIN YALNIZCA şu JSON olsun: {"soz": "söyleyeceğin cümle", "komutlar": [ ... ], "ruh_hali": "opsiyonel"}
 - komutlar sırayla oynatılır (0–4 öğe). "soz" ilk komutla birlikte söylenir; komutların içine soz koyma.
